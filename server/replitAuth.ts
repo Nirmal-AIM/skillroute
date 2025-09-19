@@ -8,8 +8,11 @@ import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 
+// Handle missing REPLIT_DOMAINS for WebContainer environment
+const REPLIT_DOMAINS = process.env.REPLIT_DOMAINS || "localhost:5000";
+
 if (!process.env.REPLIT_DOMAINS) {
-  throw new Error("Environment variable REPLIT_DOMAINS not provided");
+  console.warn("REPLIT_DOMAINS not set, using fallback for development");
 }
 
 const getOidcConfig = memoize(
@@ -85,7 +88,7 @@ export async function setupAuth(app: Express) {
   };
 
   for (const domain of process.env
-    .REPLIT_DOMAINS!.split(",")) {
+    REPLIT_DOMAINS.split(",")) {
     const strategy = new Strategy(
       {
         name: `replitauth:${domain}`,
