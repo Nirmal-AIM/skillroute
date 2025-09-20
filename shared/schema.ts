@@ -24,14 +24,20 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table (mandatory for Replit Auth)
+// User storage table with role-based authentication
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique(),
+  email: varchar("email").unique().notNull(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
-  // Additional fields for learning platform
+  // Authentication fields
+  role: varchar("role").notNull().default('learner'), // learner, trainer, policymaker
+  passwordHash: varchar("password_hash").notNull(),
+  surveyCompleted: boolean("survey_completed").default(false),
+  lastLogin: timestamp("last_login"),
+  failedLoginCount: integer("failed_login_count").default(0),
+  // Additional fields for learning platform  
   academicBackground: varchar("academic_background"),
   currentRole: varchar("current_role"),
   careerAspirations: text("career_aspirations"),
@@ -139,6 +145,60 @@ export const industryTrends = pgTable("industry_trends", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Learner survey responses
+export const learnerSurveys = pgTable("learner_surveys", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  academicBackground: varchar("academic_background").notNull(),
+  priorSkillsFreeform: text("prior_skills_freeform"),
+  socioEconomicContext: varchar("socio_economic_context"),
+  learningPace: varchar("learning_pace").notNull(),
+  aspirations: text("aspirations").notNull(),
+  priorSkillIds: text("prior_skill_ids").array(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// NCVET qualifications data
+export const ncvetQualifications = pgTable("ncvet_qualifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: varchar("code").unique().notNull(),
+  title: varchar("title").notNull(),
+  sector: varchar("sector").notNull(),
+  nsqfLevel: integer("nsqf_level").notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// NSQF-based training programs
+export const trainingPrograms = pgTable("training_programs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  provider: varchar("provider").notNull(),
+  mode: varchar("mode").notNull(), // online, offline, hybrid
+  duration: varchar("duration").notNull(),
+  nsqfLevel: integer("nsqf_level").notNull(),
+  sector: varchar("sector").notNull(),
+  qualificationCodes: text("qualification_codes").array(),
+  mappedSkillIds: text("mapped_skill_ids").array(),
+  isCertified: boolean("is_certified").default(true),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Job roles aligned with NSQF/NCVET
+export const jobRoles = pgTable("job_roles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  sector: varchar("sector").notNull(),
+  nsqfLevel: integer("nsqf_level").notNull(),
+  qualificationCodes: text("qualification_codes").array(),
+  description: text("description"),
+  salaryRange: varchar("salary_range"),
+  demandLevel: varchar("demand_level"), // high, medium, low
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // AI Analysis results
 export const aiAnalysis = pgTable("ai_analysis", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -156,6 +216,25 @@ export const insertSkillSchema = createInsertSchema(skills).omit({ id: true, cre
 export const insertCourseSchema = createInsertSchema(courses).omit({ id: true, createdAt: true });
 export const insertPathwaySchema = createInsertSchema(learningPathways).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertEnrollmentSchema = createInsertSchema(enrollments).omit({ id: true, enrolledAt: true });
+export const insertSurveySchema = createInsertSchema(learnerSurveys).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertQualificationSchema = createInsertSchema(ncvetQualifications).omit({ id: true, createdAt: true });
+export const insertTrainingProgramSchema = createInsertSchema(trainingPrograms).omit({ id: true, createdAt: true });
+export const insertJobRoleSchema = createInsertSchema(jobRoles).omit({ id: true, createdAt: true });
+
+// Registration schema for new users
+export const registerUserSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8).max(100),
+  firstName: z.string().min(1).max(100),
+  lastName: z.string().min(1).max(100),
+  role: z.enum(['learner', 'trainer', 'policymaker']).default('learner'),
+});
+
+// Login schema
+export const loginUserSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
 
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -171,3 +250,10 @@ export type Achievement = typeof achievements.$inferSelect;
 export type UserSkill = typeof userSkills.$inferSelect;
 export type IndustryTrend = typeof industryTrends.$inferSelect;
 export type AIAnalysis = typeof aiAnalysis.$inferSelect;
+export type LearnerSurvey = typeof learnerSurveys.$inferSelect;
+export type InsertSurvey = z.infer<typeof insertSurveySchema>;
+export type NCVETQualification = typeof ncvetQualifications.$inferSelect;
+export type TrainingProgram = typeof trainingPrograms.$inferSelect;
+export type JobRole = typeof jobRoles.$inferSelect;
+export type RegisterUser = z.infer<typeof registerUserSchema>;
+export type LoginUser = z.infer<typeof loginUserSchema>;
