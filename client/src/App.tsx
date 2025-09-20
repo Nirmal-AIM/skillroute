@@ -10,6 +10,9 @@ import i18n from "@/lib/i18n";
 
 // Pages
 import Landing from "@/pages/landing";
+import Login from "@/pages/login";
+import Register from "@/pages/register";
+import Survey from "@/pages/survey";
 import Dashboard from "@/pages/dashboard";
 import Profile from "@/pages/profile";
 import Pathways from "@/pages/pathways";
@@ -41,9 +44,14 @@ function Router() {
   return (
     <Switch>
       {!isAuthenticated ? (
-        <Route path="/" component={Landing} />
+        <>
+          <Route path="/" component={Landing} />
+          <Route path="/login" component={Login} />
+          <Route path="/register" component={Register} />
+        </>
       ) : (
         <>
+          <Route path="/survey" component={Survey} />
           <Route path="/" component={Dashboard} />
           <Route path="/profile" component={Profile} />
           <Route path="/pathways" component={Pathways} />

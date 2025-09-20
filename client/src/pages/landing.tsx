@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useLocation } from "wouter";
 import { 
   Brain, 
   Target, 
@@ -14,8 +15,10 @@ import {
 } from "lucide-react";
 
 export default function Landing() {
+  const [, setLocation] = useLocation();
+  
   const handleLogin = () => {
-    window.location.href = "/api/login";
+    setLocation("/register");
   };
 
   const features = [
@@ -69,8 +72,8 @@ export default function Landing() {
                 <Brain className="w-6 h-6 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-foreground">SkillPath AI</h1>
-                <p className="text-sm text-muted-foreground">Personalized Learning</p>
+                <h1 className="text-xl font-bold text-foreground">Vidya Varadhi</h1>
+                <p className="text-sm text-muted-foreground">Career Guidance Platform</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -80,7 +83,10 @@ export default function Landing() {
                 <option value="ta">தமிழ்</option>
                 <option value="te">తెలుగు</option>
               </select>
-              <Button onClick={handleLogin} data-testid="button-login">
+              <Button variant="outline" onClick={() => setLocation("/login")} data-testid="button-login">
+                Sign In
+              </Button>
+              <Button onClick={handleLogin} data-testid="button-get-started">
                 Get Started <ChevronRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
@@ -108,8 +114,8 @@ export default function Landing() {
             <Button size="lg" onClick={handleLogin} className="text-lg px-8" data-testid="button-start-journey">
               Start Your Journey <Zap className="w-5 h-5 ml-2" />
             </Button>
-            <Button size="lg" variant="outline" className="text-lg px-8" data-testid="button-explore-demo">
-              <BookOpen className="w-5 h-5 mr-2" /> Explore Demo
+            <Button size="lg" variant="outline" onClick={() => setLocation("/login")} className="text-lg px-8" data-testid="button-sign-in">
+              <BookOpen className="w-5 h-5 mr-2" /> Sign In
             </Button>
           </div>
         </div>
@@ -194,12 +200,12 @@ export default function Landing() {
                 <Brain className="w-5 h-5 text-primary-foreground" />
               </div>
               <div>
-                <div className="font-bold text-foreground">SkillPath AI</div>
+                <div className="font-bold text-foreground">Vidya Varadhi</div>
                 <div className="text-sm text-muted-foreground">Empowering India's Workforce</div>
               </div>
             </div>
             <div className="text-sm text-muted-foreground">
-              © 2025 SkillPath AI. Built for SIH 2025 Competition.
+              © 2025 Vidya Varadhi. Built for SIH 2025 Competition.
             </div>
           </div>
         </div>

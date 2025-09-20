@@ -25,10 +25,17 @@ router.post('/register', async (req, res: Response) => {
       return res.status(400).json({ message: 'User already exists with this email' });
     }
 
-    // Hash password and create user
-    const passwordHash = await hashPassword(validatedData.password);
-    const user = await storage.createUser({
+    // SECURITY: Force all new registrations to be 'learner' role for security
+    // TODO: Implement admin approval flow for trainer/policymaker roles  
+    const safeUserData = {
       ...validatedData,
+      role: 'learner' as const, // Override client-supplied role to prevent privilege escalation
+    };
+
+    // Hash password and create user
+    const passwordHash = await hashPassword(safeUserData.password);
+    const user = await storage.createUser({
+      ...safeUserData,
       passwordHash
     });
 

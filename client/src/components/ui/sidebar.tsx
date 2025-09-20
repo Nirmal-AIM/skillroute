@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 import {
   ChartLine,
   User as UserIcon,
@@ -26,6 +27,7 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose, user, className }: SidebarProps) {
   const [location] = useLocation();
   const { t } = useTranslation();
+  const { logout } = useAuth();
 
   const navigation = [
     { name: t('nav.dashboard'), href: '/', icon: ChartLine },
@@ -38,7 +40,7 @@ export function Sidebar({ isOpen, onClose, user, className }: SidebarProps) {
   ];
 
   const handleLogout = () => {
-    window.location.href = "/api/logout";
+    logout();
   };
 
   const userInitials = user?.firstName && user?.lastName 
@@ -63,8 +65,8 @@ export function Sidebar({ isOpen, onClose, user, className }: SidebarProps) {
             <Brain className="text-primary-foreground text-lg" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-foreground">SkillPath AI</h1>
-            <p className="text-sm text-muted-foreground">Personalized Learning</p>
+            <h1 className="text-xl font-bold text-foreground">Vidya Varadhi</h1>
+            <p className="text-sm text-muted-foreground">Career Guidance Platform</p>
           </div>
         </div>
       </div>

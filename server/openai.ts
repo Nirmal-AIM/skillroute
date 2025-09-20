@@ -40,6 +40,31 @@ export class AILearningService {
   // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
   private model = "gpt-5";
 
+  async generateCareerGuidance(prompt: string): Promise<string> {
+    try {
+      const completion = await openai.chat.completions.create({
+        model: this.model,
+        messages: [
+          {
+            role: "system",
+            content: "You are Vidya Varadhi, a knowledgeable and supportive career guidance assistant specializing in Indian vocational education and NSQF-aligned career paths. You help learners navigate their career journey with empathy and practical advice."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        max_tokens: 500,
+        temperature: 0.7
+      });
+
+      return completion.choices[0]?.message?.content || "I'm here to help with your career questions. Please tell me more about what you'd like to explore.";
+    } catch (error) {
+      console.error("OpenAI API error:", error);
+      throw new Error("Failed to generate career guidance");
+    }
+  }
+
   async analyzeSkillGap(
     user: User,
     userSkills: UserSkill[],

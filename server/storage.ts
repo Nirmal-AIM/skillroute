@@ -437,6 +437,157 @@ export class DatabaseStorage implements IStorage {
   async initializeDatabase() {
     console.log("Initializing database with sample data...");
 
+    // Add NCVET qualifications
+    const sampleQualifications = [
+      { code: "SSC/Q0101", title: "Assistant Beauty Therapist", sector: "Beauty & Wellness", nsqfLevel: 4, description: "Basic beauty therapy and skin care services" },
+      { code: "SSC/Q0201", title: "Field Technician Computing and Peripherals", sector: "IT-ITeS", nsqfLevel: 4, description: "Installation and maintenance of computer systems" },
+      { code: "AGR/Q0101", title: "Organic Grower", sector: "Agriculture", nsqfLevel: 4, description: "Production of organic crops using sustainable methods" },
+      { code: "CSC/Q0101", title: "Assistant Systems Engineer Telecom Infrastructure", sector: "Telecom", nsqfLevel: 5, description: "Installation and maintenance of telecom infrastructure" },
+      { code: "HSS/Q0101", title: "Healthcare Assistant", sector: "Healthcare", nsqfLevel: 4, description: "Basic healthcare support and patient care" },
+      { code: "ASC/Q0101", title: "Two Wheeler Service Technician", sector: "Automotive", nsqfLevel: 4, description: "Service and repair of two-wheeler vehicles" },
+      { code: "FFS/Q0101", title: "Processing Technician Frozen Food", sector: "Food Processing", nsqfLevel: 4, description: "Processing and packaging of frozen food products" },
+      { code: "RSC/Q0101", title: "Retail Sales Associate", sector: "Retail", nsqfLevel: 4, description: "Customer service and sales in retail environments" },
+      { code: "TSC/Q0101", title: "Tour Guide", sector: "Tourism & Hospitality", nsqfLevel: 4, description: "Guiding tourists and managing travel itineraries" },
+      { code: "BFS/Q0101", title: "Relationship Manager Microfinance", sector: "Banking & Finance", nsqfLevel: 5, description: "Managing microfinance operations and client relationships" }
+    ];
+
+    for (const qualification of sampleQualifications) {
+      try {
+        await db.insert(ncvetQualifications).values(qualification).onConflictDoNothing();
+      } catch (error) {
+        console.error("Error inserting qualification:", error);
+      }
+    }
+
+    // Add NSQF-based training programs
+    const sampleTrainingPrograms = [
+      {
+        title: "Digital Marketing Specialist Program",
+        provider: "Skill India Digital",
+        mode: "hybrid",
+        duration: "3 months",
+        nsqfLevel: 5,
+        sector: "IT-ITeS",
+        qualificationCodes: ["SSC/Q0201"],
+        mappedSkillIds: [],
+        isCertified: true,
+        description: "Comprehensive digital marketing training with SEO, SEM, and social media marketing"
+      },
+      {
+        title: "Basic Healthcare Support Training",
+        provider: "Healthcare Sector Skill Council",
+        mode: "offline",
+        duration: "6 months",
+        nsqfLevel: 4,
+        sector: "Healthcare",
+        qualificationCodes: ["HSS/Q0101"],
+        mappedSkillIds: [],
+        isCertified: true,
+        description: "Training for healthcare assistants in basic patient care and medical support"
+      },
+      {
+        title: "Automotive Service Technician Course",
+        provider: "Automotive Skill Development Council",
+        mode: "offline",
+        duration: "4 months",
+        nsqfLevel: 4,
+        sector: "Automotive",
+        qualificationCodes: ["ASC/Q0101"],
+        mappedSkillIds: [],
+        isCertified: true,
+        description: "Hands-on training for two-wheeler service and repair"
+      },
+      {
+        title: "Beauty Therapy Foundation Course",
+        provider: "Beauty & Wellness Sector Skill Council",
+        mode: "offline",
+        duration: "2 months",
+        nsqfLevel: 4,
+        sector: "Beauty & Wellness",
+        qualificationCodes: ["SSC/Q0101"],
+        mappedSkillIds: [],
+        isCertified: true,
+        description: "Basic beauty therapy skills including facial treatments and skin care"
+      },
+      {
+        title: "Agricultural Technology Program",
+        provider: "Agriculture Skill Council of India",
+        mode: "hybrid",
+        duration: "3 months",
+        nsqfLevel: 4,
+        sector: "Agriculture",
+        qualificationCodes: ["AGR/Q0101"],
+        mappedSkillIds: [],
+        isCertified: true,
+        description: "Modern agricultural techniques and organic farming methods"
+      }
+    ];
+
+    for (const program of sampleTrainingPrograms) {
+      try {
+        await db.insert(trainingPrograms).values(program).onConflictDoNothing();
+      } catch (error) {
+        console.error("Error inserting training program:", error);
+      }
+    }
+
+    // Add job roles aligned with NSQF/NCVET
+    const sampleJobRoles = [
+      {
+        title: "Digital Marketing Executive",
+        sector: "IT-ITeS",
+        nsqfLevel: 5,
+        qualificationCodes: ["SSC/Q0201"],
+        description: "Responsible for digital marketing campaigns and online brand presence",
+        salaryRange: "₹3-6 LPA",
+        demandLevel: "high"
+      },
+      {
+        title: "Healthcare Assistant",
+        sector: "Healthcare",
+        nsqfLevel: 4,
+        qualificationCodes: ["HSS/Q0101"],
+        description: "Support healthcare professionals in patient care and medical procedures",
+        salaryRange: "₹2-4 LPA",
+        demandLevel: "high"
+      },
+      {
+        title: "Automotive Service Technician",
+        sector: "Automotive",
+        nsqfLevel: 4,
+        qualificationCodes: ["ASC/Q0101"],
+        description: "Service and repair vehicles, diagnose mechanical issues",
+        salaryRange: "₹2.5-5 LPA",
+        demandLevel: "medium"
+      },
+      {
+        title: "Beauty Therapist",
+        sector: "Beauty & Wellness",
+        nsqfLevel: 4,
+        qualificationCodes: ["SSC/Q0101"],
+        description: "Provide beauty treatments and skincare services to clients",
+        salaryRange: "₹2-4 LPA",
+        demandLevel: "medium"
+      },
+      {
+        title: "Agricultural Technician",
+        sector: "Agriculture",
+        nsqfLevel: 4,
+        qualificationCodes: ["AGR/Q0101"],
+        description: "Apply modern farming techniques and manage crop production",
+        salaryRange: "₹2-3.5 LPA",
+        demandLevel: "medium"
+      }
+    ];
+
+    for (const jobRole of sampleJobRoles) {
+      try {
+        await db.insert(jobRoles).values(jobRole).onConflictDoNothing();
+      } catch (error) {
+        console.error("Error inserting job role:", error);
+      }
+    }
+
     // Add sample skills
     const sampleSkills = [
       { name: "Python Programming", category: "Programming", nsqfLevel: 5, description: "Programming in Python language", industryDemand: "95.5" },

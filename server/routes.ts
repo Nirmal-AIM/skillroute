@@ -6,6 +6,8 @@ import { aiService } from "./openai";
 import { z } from "zod";
 import { insertUserSchema, insertCourseSchema, insertPathwaySchema, updateProfileSchema } from "@shared/schema";
 import authRoutes from "./authRoutes";
+import surveyRoutes from "./surveyRoutes";
+import chatbotRoutes from "./chatbotRoutes";
 import cookieParser from "cookie-parser";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -14,6 +16,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Auth routes
   app.use('/api/auth', authRoutes);
+  
+  // Survey routes
+  app.use('/api/survey', surveyRoutes);
+  
+  // Chatbot routes
+  app.use('/api/chatbot', chatbotRoutes);
 
   // User info route (handled by authRoutes now, but keeping for compatibility)
   app.get('/api/user', authenticateJWT, async (req: AuthRequest, res) => {
