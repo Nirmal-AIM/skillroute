@@ -214,16 +214,16 @@ export const insertJobRoleSchema = createInsertSchema(jobRoles).omit({ id: true,
 
 // Registration schema for new users
 export const registerUserSchema = z.object({
-  email: z.string().trim().email("Please enter a valid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters").max(100),
-  firstName: z.string().trim().min(1, "First name is required").max(100),
-  lastName: z.string().trim().min(1, "Last name is required").max(100),
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters long"),
+  firstName: z.string().min(1, "First name is required").max(100),
+  lastName: z.string().min(1, "Last name is required").max(100),
   role: z.enum(['learner', 'trainer', 'policymaker']).default('learner'),
 });
 
 // Login schema
 export const loginUserSchema = z.object({
-  email: z.string().trim().email("Please enter a valid email address"),
+  email: z.string().email("Please enter a valid email address"),
   password: z.string().min(1, "Password is required"),
 });
 
