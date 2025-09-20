@@ -9,6 +9,10 @@ import {
   userSkills,
   industryTrends,
   aiAnalysis,
+  learnerSurveys,
+  ncvetQualifications,
+  trainingPrograms,
+  jobRoles,
   type User,
   type UpsertUser,
   type Skill,
@@ -23,13 +27,23 @@ import {
   type UserSkill,
   type IndustryTrend,
   type AIAnalysis,
+  type LearnerSurvey,
+  type InsertSurvey,
+  type NCVETQualification,
+  type TrainingProgram,
+  type JobRole,
+  type RegisterUser,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, ilike, inArray, sql } from "drizzle-orm";
 
 export interface IStorage {
-  // User operations (mandatory for Replit Auth)
+  // User operations for authentication
   getUser(id: string): Promise<User | undefined>;
+  getUserById(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(userData: RegisterUser & { passwordHash: string }): Promise<User>;
+  updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
 
   // Skills operations
@@ -66,12 +80,57 @@ export interface IStorage {
   // AI Analysis
   saveAIAnalysis(analysis: Omit<AIAnalysis, 'id' | 'createdAt'>): Promise<AIAnalysis>;
   getAIAnalysis(userId: string, analysisType?: string): Promise<AIAnalysis[]>;
+
+  // Survey operations
+  getUserSurvey(userId: string): Promise<LearnerSurvey | undefined>;
+  createSurvey(survey: InsertSurvey): Promise<LearnerSurvey>;
+  updateSurvey(userId: string, updates: Partial<InsertSurvey>): Promise<LearnerSurvey | undefined>;
+
+  // NCVET/NSQF operations
+  getQualifications(filters?: { sector?: string; nsqfLevel?: number; search?: string }): Promise<NCVETQualification[]>;
+  getTrainingPrograms(filters?: { sector?: string; nsqfLevel?: number; isCertified?: boolean }): Promise<TrainingProgram[]>;
+  getJobRoles(filters?: { sector?: string; nsqfLevel?: number }): Promise<JobRole[]>;
 }
 
 export class DatabaseStorage implements IStorage {
-  // User operations
+  // User operations for authentication
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserById(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async createUser(userData: RegisterUser & { passwordHash: string }): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values({
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        role: userData.role,
+        passwordHash: userData.passwordHash,
+        surveyCompleted: false,
+        failedLoginCount: 0,
+      })
+      .returning();
+    return user;
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
     return user;
   }
 
@@ -284,6 +343,95 @@ export class DatabaseStorage implements IStorage {
       .from(aiAnalysis)
       .where(and(...conditions))
       .orderBy(desc(aiAnalysis.createdAt));
+  }
+
+  // Survey operations
+  async getUserSurvey(userId: string): Promise<LearnerSurvey | undefined> {
+    const [survey] = await db.select().from(learnerSurveys).where(eq(learnerSurveys.userId, userId));
+    return survey;
+  }
+
+  async createSurvey(survey: InsertSurvey): Promise<LearnerSurvey> {
+    const [newSurvey] = await db.insert(learnerSurveys).values(survey).returning();
+    // Mark user as having completed survey
+    await this.updateUser(survey.userId, { surveyCompleted: true });
+    return newSurvey;
+  }
+
+  async updateSurvey(userId: string, updates: Partial<InsertSurvey>): Promise<LearnerSurvey | undefined> {
+    const [updated] = await db
+      .update(learnerSurveys)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(learnerSurveys.userId, userId))
+      .returning();
+    return updated;
+  }
+
+  // NCVET/NSQF operations
+  async getQualifications(filters: any = {}): Promise<NCVETQualification[]> {
+    let query = db.select().from(ncvetQualifications);
+    let whereConditions = [];
+
+    if (filters.sector) {
+      whereConditions.push(eq(ncvetQualifications.sector, filters.sector));
+    }
+    if (filters.nsqfLevel) {
+      whereConditions.push(eq(ncvetQualifications.nsqfLevel, filters.nsqfLevel));
+    }
+    if (filters.search) {
+      whereConditions.push(
+        or(
+          ilike(ncvetQualifications.title, `%${filters.search}%`),
+          ilike(ncvetQualifications.code, `%${filters.search}%`),
+          ilike(ncvetQualifications.description, `%${filters.search}%`)
+        )
+      );
+    }
+
+    if (whereConditions.length > 0) {
+      query = query.where(and(...whereConditions));
+    }
+
+    return await query.orderBy(ncvetQualifications.title);
+  }
+
+  async getTrainingPrograms(filters: any = {}): Promise<TrainingProgram[]> {
+    let query = db.select().from(trainingPrograms);
+    let whereConditions = [];
+
+    if (filters.sector) {
+      whereConditions.push(eq(trainingPrograms.sector, filters.sector));
+    }
+    if (filters.nsqfLevel) {
+      whereConditions.push(eq(trainingPrograms.nsqfLevel, filters.nsqfLevel));
+    }
+    if (filters.isCertified !== undefined) {
+      whereConditions.push(eq(trainingPrograms.isCertified, filters.isCertified));
+    }
+
+    if (whereConditions.length > 0) {
+      query = query.where(and(...whereConditions));
+    }
+
+    return await query.orderBy(trainingPrograms.title);
+  }
+
+  async getJobRoles(filters: any = {}): Promise<JobRole[]> {
+    let query = db.select().from(jobRoles);
+    let whereConditions = [];
+
+    if (filters.sector) {
+      whereConditions.push(eq(jobRoles.sector, filters.sector));
+    }
+    if (filters.nsqfLevel) {
+      whereConditions.push(eq(jobRoles.nsqfLevel, filters.nsqfLevel));
+    }
+
+    if (whereConditions.length > 0) {
+      query = query.where(and(...whereConditions));
+    }
+
+    return await query.orderBy(jobRoles.title);
   }
 
   async initializeDatabase() {

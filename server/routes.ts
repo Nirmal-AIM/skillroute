@@ -1,20 +1,24 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { authenticateJWT, requireRole, requireSurveyCompletion, type AuthRequest } from "./auth";
 import { aiService } from "./openai";
 import { z } from "zod";
-import { insertUserSchema, insertCourseSchema, insertPathwaySchema } from "@shared/schema";
+import { insertUserSchema, insertCourseSchema, insertPathwaySchema, updateProfileSchema } from "@shared/schema";
+import authRoutes from "./authRoutes";
+import cookieParser from "cookie-parser";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  await setupAuth(app);
-
+  // Cookie parser for JWT tokens
+  app.use(cookieParser());
+  
   // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  app.use('/api/auth', authRoutes);
+
+  // User info route (handled by authRoutes now, but keeping for compatibility)
+  app.get('/api/user', authenticateJWT, async (req: AuthRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
+      const user = await storage.getUserById(req.user!.id);
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -23,19 +27,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Profile routes
-  app.put('/api/profile', isAuthenticated, async (req: any, res) => {
+  app.put('/api/profile', authenticateJWT, async (req: AuthRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const updateData = insertUserSchema.parse(req.body);
+      const userId = req.user!.id;
+      // Use safe profile schema to prevent privilege escalation
+      const updateData = updateProfileSchema.parse(req.body);
       
-      const updatedUser = await storage.upsertUser({
-        id: userId,
-        email: req.user.claims.email,
-        firstName: req.user.claims.first_name,
-        lastName: req.user.claims.last_name,
-        profileImageUrl: req.user.claims.profile_image_url,
-        ...updateData,
-      });
+      const updatedUser = await storage.updateUser(userId, updateData);
       
       res.json(updatedUser);
     } catch (error) {
@@ -57,9 +55,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/user/skills', isAuthenticated, async (req: any, res) => {
+  app.get('/api/user/skills', authenticateJWT, async (req: AuthRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const userSkills = await storage.getUserSkills(userId);
       res.json(userSkills);
     } catch (error) {
@@ -67,9 +65,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/user/skills', isAuthenticated, async (req: any, res) => {
+  app.post('/api/user/skills', authenticateJWT, async (req: AuthRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const { skillId, proficiencyLevel, proficiencyScore } = req.body;
       
       const userSkill = await storage.updateUserSkill(userId, skillId, proficiencyLevel, proficiencyScore);
@@ -111,12 +109,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AI-powered recommendations
-  app.post('/api/ai/skill-analysis', isAuthenticated, async (req: any, res) => {
+  app.post('/api/ai/skill-analysis', authenticateJWT, requireSurveyCompletion, async (req: AuthRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const { targetRole } = req.body;
       
-      const user = await storage.getUser(userId);
+      const user = await storage.getUserById(userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -132,12 +130,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/ai/generate-pathway', isAuthenticated, async (req: any, res) => {
+  app.post('/api/ai/generate-pathway', authenticateJWT, requireSurveyCompletion, async (req: AuthRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const { skillGapAnalysis, targetRole } = req.body;
       
-      const user = await storage.getUser(userId);
+      const user = await storage.getUserById(userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -164,12 +162,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/ai/course-recommendations', isAuthenticated, async (req: any, res) => {
+  app.get('/api/ai/course-recommendations', authenticateJWT, requireSurveyCompletion, async (req: AuthRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const limit = parseInt(req.query.limit as string) || 10;
       
-      const user = await storage.getUser(userId);
+      const user = await storage.getUserById(userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -186,9 +184,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Learning pathways
-  app.get('/api/pathways', isAuthenticated, async (req: any, res) => {
+  app.get('/api/pathways', authenticateJWT, async (req: AuthRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const pathways = await storage.getUserPathways(userId);
       res.json(pathways);
     } catch (error) {
@@ -196,9 +194,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/pathways', isAuthenticated, async (req: any, res) => {
+  app.post('/api/pathways', authenticateJWT, async (req: AuthRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const pathwayData = insertPathwaySchema.parse({ ...req.body, userId });
       
       const pathway = await storage.createPathway(pathwayData);
@@ -209,9 +207,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Enrollments
-  app.get('/api/enrollments', isAuthenticated, async (req: any, res) => {
+  app.get('/api/enrollments', authenticateJWT, async (req: AuthRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const enrollments = await storage.getUserEnrollments(userId);
       res.json(enrollments);
     } catch (error) {
@@ -219,9 +217,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/enrollments', isAuthenticated, async (req: any, res) => {
+  app.post('/api/enrollments', authenticateJWT, async (req: AuthRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const { courseId } = req.body;
       
       const enrollment = await storage.createEnrollment({ userId, courseId });
@@ -231,9 +229,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/enrollments/:courseId/progress', isAuthenticated, async (req: any, res) => {
+  app.put('/api/enrollments/:courseId/progress', authenticateJWT, async (req: AuthRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const { courseId } = req.params;
       const { progress } = req.body;
       
@@ -254,9 +252,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/user/achievements', isAuthenticated, async (req: any, res) => {
+  app.get('/api/user/achievements', authenticateJWT, async (req: AuthRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       const achievements = await storage.getUserAchievements(userId);
       res.json(achievements);
     } catch (error) {
@@ -276,9 +274,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Dashboard analytics
-  app.get('/api/dashboard/analytics', isAuthenticated, async (req: any, res) => {
+  app.get('/api/dashboard/analytics', authenticateJWT, requireSurveyCompletion, async (req: AuthRequest, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user!.id;
       
       const [enrollments, pathways, userSkills, achievements] = await Promise.all([
         storage.getUserEnrollments(userId),

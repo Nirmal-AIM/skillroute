@@ -236,6 +236,19 @@ export const loginUserSchema = z.object({
   password: z.string().min(1),
 });
 
+// Safe profile update schema (excludes security-sensitive fields)
+export const updateProfileSchema = z.object({
+  firstName: z.string().min(1).max(100).optional(),
+  lastName: z.string().min(1).max(100).optional(),
+  profileImageUrl: z.string().url().optional().or(z.literal("")),
+  academicBackground: z.string().max(200).optional(),
+  currentRole: z.string().max(100).optional(),
+  careerAspirations: z.string().max(500).optional(),
+  socioEconomicContext: z.string().max(200).optional(),
+  preferredLanguage: z.string().max(10).optional(),
+  learningPace: z.enum(['slow', 'moderate', 'fast']).optional(),
+});
+
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type Skill = typeof skills.$inferSelect;
@@ -257,3 +270,4 @@ export type TrainingProgram = typeof trainingPrograms.$inferSelect;
 export type JobRole = typeof jobRoles.$inferSelect;
 export type RegisterUser = z.infer<typeof registerUserSchema>;
 export type LoginUser = z.infer<typeof loginUserSchema>;
+export type UpdateProfile = z.infer<typeof updateProfileSchema>;
