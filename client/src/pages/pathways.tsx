@@ -11,8 +11,77 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Menu, Route, Plus, Clock, Target, BookOpen, TrendingUp, Brain } from "lucide-react";
+import { Menu, Route, Plus, Clock, Target, BookOpen, TrendingUp, Brain, Sparkles } from "lucide-react";
 import type { LearningPathway } from "@shared/schema";
+
+const DEFAULT_PATHWAYS = [
+  {
+    id: 'default-1',
+    title: 'Full Stack Web Development',
+    description: 'Master both frontend and backend development with modern technologies. Learn React, Node.js, databases, and deployment strategies.',
+    targetRole: 'Full Stack Developer',
+    estimatedDuration: '6 months',
+    difficulty: 'intermediate',
+    progress: 0,
+    aiGenerated: false,
+    isDefault: true
+  },
+  {
+    id: 'default-2',
+    title: 'Data Science & Analytics',
+    description: 'Learn data analysis, visualization, and machine learning. Build skills in Python, SQL, statistical analysis, and data storytelling.',
+    targetRole: 'Data Analyst',
+    estimatedDuration: '4 months',
+    difficulty: 'beginner',
+    progress: 0,
+    aiGenerated: false,
+    isDefault: true
+  },
+  {
+    id: 'default-3',
+    title: 'Digital Marketing Professional',
+    description: 'Master SEO, social media marketing, content strategy, and analytics. Learn to create effective digital campaigns.',
+    targetRole: 'Digital Marketer',
+    estimatedDuration: '3 months',
+    difficulty: 'beginner',
+    progress: 0,
+    aiGenerated: false,
+    isDefault: true
+  },
+  {
+    id: 'default-4',
+    title: 'Cloud Computing & DevOps',
+    description: 'Learn AWS, Azure, containerization with Docker, Kubernetes, CI/CD pipelines, and infrastructure automation.',
+    targetRole: 'DevOps Engineer',
+    estimatedDuration: '5 months',
+    difficulty: 'advanced',
+    progress: 0,
+    aiGenerated: false,
+    isDefault: true
+  },
+  {
+    id: 'default-5',
+    title: 'Mobile App Development',
+    description: 'Build native and cross-platform mobile applications. Learn React Native, Flutter, mobile UI/UX, and app deployment.',
+    targetRole: 'Mobile Developer',
+    estimatedDuration: '5 months',
+    difficulty: 'intermediate',
+    progress: 0,
+    aiGenerated: false,
+    isDefault: true
+  },
+  {
+    id: 'default-6',
+    title: 'Cybersecurity Specialist',
+    description: 'Learn network security, ethical hacking, threat detection, security compliance, and incident response strategies.',
+    targetRole: 'Security Analyst',
+    estimatedDuration: '6 months',
+    difficulty: 'advanced',
+    progress: 0,
+    aiGenerated: false,
+    isDefault: true
+  }
+];
 
 export default function Pathways() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -189,7 +258,7 @@ export default function Pathways() {
                 </Card>
               ))}
             </div>
-          ) : pathways && pathways.length > 0 ? (
+          ) : pathways && Array.isArray(pathways) && pathways.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {pathways.map((pathway: LearningPathway) => (
                 <Card 
@@ -272,27 +341,97 @@ export default function Pathways() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-16">
-              <Route className="h-24 w-24 text-muted-foreground mx-auto mb-6" />
-              <h3 className="text-2xl font-bold text-foreground mb-4">
-                No Learning Pathways Yet
-              </h3>
-              <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                Generate your first AI-powered learning pathway tailored to your career aspirations and skill level.
-              </p>
-              <Button 
-                size="lg"
-                onClick={handleGeneratePathway}
-                disabled={generatePathwayMutation.isPending}
-                data-testid="button-create-first-pathway"
-              >
-                {generatePathwayMutation.isPending ? (
-                  <Brain className="h-5 w-5 mr-2 animate-pulse" />
-                ) : (
-                  <TrendingUp className="h-5 w-5 mr-2" />
-                )}
-                Create Your First Pathway
-              </Button>
+            <div className="space-y-6">
+              {/* Suggested Pathways Banner */}
+              <Card className="border-2 border-primary/20 bg-primary/5">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="rounded-full bg-primary/10 p-3">
+                      <Sparkles className="h-6 w-6 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-foreground mb-2">
+                        Explore Suggested Learning Pathways
+                      </h3>
+                      <p className="text-muted-foreground mb-4">
+                        Start with our curated learning pathways designed for popular career paths. Or generate a personalized AI-powered pathway based on your unique profile and goals.
+                      </p>
+                      <Button 
+                        onClick={handleGeneratePathway}
+                        disabled={generatePathwayMutation.isPending}
+                        data-testid="button-generate-custom-pathway"
+                      >
+                        {generatePathwayMutation.isPending ? (
+                          <Brain className="h-4 w-4 mr-2 animate-pulse" />
+                        ) : (
+                          <Brain className="h-4 w-4 mr-2" />
+                        )}
+                        Generate My Custom Pathway
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Default Pathways Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {DEFAULT_PATHWAYS.map((pathway) => (
+                  <Card 
+                    key={pathway.id} 
+                    className="border border-border card-hover cursor-pointer"
+                    data-testid={`default-pathway-${pathway.id}`}
+                  >
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg mb-2 line-clamp-2">
+                            {pathway.title}
+                          </CardTitle>
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {pathway.description}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="ml-2 bg-secondary/10 text-secondary border-secondary/20">
+                          Suggested
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {/* Metadata */}
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            <span>{pathway.estimatedDuration}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Target className="h-4 w-4" />
+                            <span>{pathway.targetRole}</span>
+                          </div>
+                        </div>
+
+                        {/* Difficulty Badge */}
+                        <Badge 
+                          variant="outline" 
+                          className={getDifficultyColor(pathway.difficulty)}
+                        >
+                          {pathway.difficulty}
+                        </Badge>
+
+                        {/* Action Button */}
+                        <Button 
+                          className="w-full mt-4"
+                          variant="outline"
+                          data-testid={`button-explore-${pathway.id}`}
+                        >
+                          <Route className="h-4 w-4 mr-2" />
+                          Explore Pathway
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           )}
 

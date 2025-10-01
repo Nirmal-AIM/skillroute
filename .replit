@@ -15,7 +15,7 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 35941
+localPort = 33325
 externalPort = 3001
 
 [[ports]]
@@ -29,6 +29,7 @@ REPLIT_DOMAINS = "$REPL_SLUG.$REPL_OWNER.replit.dev"
 
 [agent]
 integrations = ["javascript_database:1.0.0", "javascript_log_in_with_replit:1.0.0", "javascript_openai:1.0.0"]
+expertMode = true
 
 [workflows]
 runButton = "Start Application"
