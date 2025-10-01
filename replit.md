@@ -4,6 +4,10 @@
 
 Skillroute is a comprehensive AI-powered vocational education platform designed to help learners in India navigate career paths aligned with the National Skills Qualifications Framework (NSQF). The application provides personalized skill gap analysis, learning pathway recommendations, and career guidance through an intelligent chatbot interface. The platform caters to different user roles including learners, trainers, and policymakers, with a focus on bridging the gap between education and industry requirements.
 
+## Recent Changes
+
+**Default Learning Pathways** (October 2025): Added 6 curated default learning pathways that are displayed to users when they have no personalized pathways yet. These pathways cover popular career tracks including Full Stack Web Development, Data Science & Analytics, Digital Marketing, Cloud Computing & DevOps, Mobile App Development, and Cybersecurity. Each pathway includes detailed descriptions, duration estimates, difficulty levels, and target roles aligned with industry standards.
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
